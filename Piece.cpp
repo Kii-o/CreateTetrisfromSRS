@@ -1,17 +1,20 @@
 #include "Piece.hpp" 
+#include "Board.hpp"
 #include <algorithm> 
 #include <iostream> 
+#include <array>
+#include <vector>
 
 // ==== 各ピースの形状定義 ====
 // 各ピースは「4つの相対座標」で構成される
 const std::array<std::array<sf::Vector2i, 4>, 7> PIECE_SHAPES = { {
-    { sf::Vector2i(0,0), sf::Vector2i(-1,0), sf::Vector2i(1,0), sf::Vector2i(0,1) }, // Tミノ 
-    { sf::Vector2i(0,0), sf::Vector2i(1,0), sf::Vector2i(0,1), sf::Vector2i(-1,1) }, // Sミノ
-    { sf::Vector2i(0,0), sf::Vector2i(-1,0), sf::Vector2i(0,1), sf::Vector2i(1,1) }, // Zミノ
-    { sf::Vector2i(0,0), sf::Vector2i(-1,0), sf::Vector2i(1,0), sf::Vector2i(2,0) }, // Iミノ
-    { sf::Vector2i(0,0), sf::Vector2i(1,0), sf::Vector2i(0,1), sf::Vector2i(1,1) },  // Oミノ
-    { sf::Vector2i(0,0), sf::Vector2i(-1,0), sf::Vector2i(-1,1), sf::Vector2i(1,0) },// Jミノ
-    { sf::Vector2i(0,0), sf::Vector2i(-1,0), sf::Vector2i(1,0), sf::Vector2i(1,1) }  // Lミノ
+    { sf::Vector2i(-1,0), sf::Vector2i(0,1), sf::Vector2i(0,0), sf::Vector2i(1,0) }, // Tミノ 
+    { sf::Vector2i(-1,1), sf::Vector2i(0,1), sf::Vector2i(0,0), sf::Vector2i(1,0) }, // Zミノ
+    { sf::Vector2i(-1,0), sf::Vector2i(0,1), sf::Vector2i(0,0), sf::Vector2i(1,1) }, // Sミノ
+    { sf::Vector2i(-1,0), sf::Vector2i(0,0), sf::Vector2i(1,0), sf::Vector2i(2,0) }, // Iミノ
+    { sf::Vector2i(0,1), sf::Vector2i(0,0), sf::Vector2i(1,1), sf::Vector2i(1,0) },  // Oミノ
+    { sf::Vector2i(-1,1), sf::Vector2i(-1,0), sf::Vector2i(0,0), sf::Vector2i(1,0) },// Jミノ
+    { sf::Vector2i(-1,0), sf::Vector2i(0,0), sf::Vector2i(1,1), sf::Vector2i(1,0) }  // Lミノ
 } };
 
 // ==== 各ピースの色定義 ====
@@ -25,7 +28,6 @@ const std::array<sf::Color, 7> PIECE_COLORS = {
     sf::Color::Blue        // L = オレンジ
 };
 
-// Piece.cpp に追加
 std::string toString(PieceType t) {
     switch (t) {
     case PieceType::I: return "I";
@@ -47,8 +49,6 @@ std::array<sf::Vector2i, 4> Piece::getAbsolutePositions() const {
     }
     return abs;
 }
-
-
 
 // ==================== Piece クラス ==================== 
 // コンストラクタ：種類に応じて色と形を設定
@@ -79,22 +79,6 @@ void Piece::drawPreview(sf::RenderWindow& window, int px, int py, int size) {
         window.draw(rect);
     }
 }
-/*
-// 任意のブロック配列を使って移動可能か判定
-bool Piece::canMove(Board& board, const std::array<sf::Vector2i, 4>& testBlocks, int dx, int dy) {
-    for (auto& b : testBlocks) {
-        int nx = x + b.x + dx;
-        int ny = y + b.y + dy;
-        if (board.isOccupied(nx, ny)) return false;
-    }
-    return true;
-}
-
-// 既存の平行移動用 canMove はオーバーロード
-bool Piece::canMove(Board& board, int dx, int dy) {
-    return canMove(board, blocks, dx, dy);
-}
-*/
 
 // 指定した移動量 (dx,dy) で動けるかどうか判定
 bool Piece::canMove(Board& board, int dx, int dy) { 
@@ -112,100 +96,145 @@ void Piece::move(int dx, int dy) {
 }
 
 // // ------------------- ウォールキックテーブル -------------------
+/*
 // T, J, L, S, Z 用
-const std::array<std::array<sf::Vector2i, 5>, 8> WALL_KICKS = { {
-    {{ {0,0}, {-1,0}, {-1,1}, {0,-2}, {-1,-2} }}, // 0->R
-    {{ {0,0}, {1,0}, {1,-1}, {0,2}, {1,2} }},     // R->0
-    {{ {0,0}, {1,0}, {1,-1}, {0,2}, {1,2} }},     // R->2
-    {{ {0,0}, {-1,0}, {-1,1}, {0,-2}, {-1,-2} }},  // 2->R
-
-    {{ {0,0}, {1,0}, {1,1}, {0,-2}, {1,-2} }},      // 2->L
-    {{ {0,0}, {-1,0}, {-1,-1}, {0,2}, {-1,2} }},    // L->2
-    {{ {0,0}, {-1,0}, {-1,-1}, {0,2}, {-1,2} }},    // L->0
-    {{ {0,0}, {1,0}, {1,1}, {0,-2}, {1,-2} }}       // 0->L
+const std::array<std::array<sf::Vector2i, 5>, 4> JLSTZ_OFFSET_TABLE = { {
+    {{ {0,0}, {0,0}, {0,0}, {0,0}, {0,0} }},
+    {{ {0,0}, {1,0}, {1,-1}, {0,2}, {1,2} }}, 
+    {{ {0,0}, {0,0}, {0,0}, {0,0}, {0,0} }},
+    {{ {0,0}, {-1,0}, {-1,-1}, {0,2}, {-1,2} }}
 } };
 // I 用
-const std::array<std::array<sf::Vector2i, 5>, 8> WALL_KICKS_I = { {
-    {{ {1,0}, {-1,0}, {2,0}, {-1,-1}, {2,2} }},      // 0->R
-    {{ {-1,0}, {1,0}, {-2,0}, {1,1}, {-2,-2} }},     // R->0
-    {{ {0,-1}, {-1,-1}, {2,-1}, {-1,1}, {2,-2} }},   // R->2
-    {{ {0,1}, {1,1}, {-2,1}, {1,-1}, {-2,2} }},      // 2->R
-
-    {{ {-1,0}, {1,0}, {-2,0}, {1,1}, {-2,-2} }},     // 2->L
-    {{ {1,0}, {-1,0}, {2,0}, {-1,-1}, {2,2} }},      // L->2
-    {{ {0,1}, {1,1}, {-2,1}, {1,-1}, {-2,2} }},      // L->0
-    {{ {0,-1}, {-1,-1}, {2,-1}, {-1,1}, {2,-2} }}    // 0->L
+const std::array<std::array<sf::Vector2i, 5>, 4> I_OFFSET_TABLE = { {
+    {{ {0,0}, {-1,0}, {2,0}, {-1,0}, {2,0} }},
+    {{ {-1,0}, {0,0}, {0,0}, {0,1}, {0,-2} }},
+    {{ {-1,1}, {1,1}, {-2,1}, {1,0}, {-2,0} }},
+    {{ {0,1}, {0,1}, {0,1}, {0,-1}, {0,2} }},
 } };
 
-//ウォールキックテーブルからどの値を適応するかを返す関数
-int getKickIndex(Rotation oldRot, Rotation newRot) {
-    if (oldRot == Rotation::Spawn && newRot == Rotation::Right) return 0;
-    if (oldRot == Rotation::Right && newRot == Rotation::Spawn) return 1;
-    if (oldRot == Rotation::Right && newRot == Rotation::Reverse) return 2;
-    if (oldRot == Rotation::Reverse && newRot == Rotation::Right) return 3;
-    if (oldRot == Rotation::Reverse && newRot == Rotation::Left) return 4;
-    if (oldRot == Rotation::Left && newRot == Rotation::Reverse) return 5;
-    if (oldRot == Rotation::Left && newRot == Rotation::Spawn) return 6;
-    if (oldRot == Rotation::Spawn && newRot == Rotation::Left) return 7;
-    return -1;
+// O 用
+const std::array<std::array<sf::Vector2i, 5>, 4> O_OFFSET_TABLE = { {
+    {{ {0,0}, {0,0}, {0,0}, {0,0}, {0,0} }},
+    {{ {0,-1},{0,0}, {0,0}, {0,0}, {0,0} }},
+    {{ {-1,-1}, {0,0}, {0,0}, {0,0}, {0,0} }},
+    {{ {-1,0},{0,0}, {0,0}, {0,0}, {0,0} }}
+} };
+*/
+
+// // ------------------- ウォールキックテーブル -------------------
+// T, J, L, S, Z 用
+const std::array<std::array<sf::Vector2i, 5>, 4> JLSTZ_OFFSET_TABLE = { {
+    {{ {0,0}, {0,0}, {0,0}, {0,0}, {0,0} }},
+    {{ {0,0}, {1,0}, {1,1}, {0,-2}, {1,-2} }},
+    {{ {0,0}, {0,0}, {0,0}, {0,0}, {0,0} }},
+    {{ {0,0}, {-1,0}, {-1,1}, {0,-2}, {-1,-2} }}
+} };
+// I 用
+const std::array<std::array<sf::Vector2i, 5>, 4> I_OFFSET_TABLE = { {
+    {{ {0,0}, {-1,0}, {2,0}, {-1,0}, {2,0} }},
+    {{ {-1,0}, {0,0}, {0,0}, {0,-1}, {0,2} }},
+    {{ {-1,-1}, {1,-1}, {-2,-1}, {1,0}, {-2,0} }},
+    {{ {0,-1}, {0,-1}, {0,-1}, {0,1}, {0,-2} }},
+} };
+
+// O 用
+const std::array<std::array<sf::Vector2i, 5>, 4> O_OFFSET_TABLE = { {
+    {{ {0,0}, {0,0}, {0,0}, {0,0}, {0,0} }},
+    {{ {0,-1},{0,0}, {0,0}, {0,0}, {0,0} }},
+    {{ {-1,-1}, {0,0}, {0,0}, {0,0}, {0,0} }},
+    {{ {-1,0},{0,0}, {0,0}, {0,0}, {0,0} }}
+} };
+
+// 各テトリミノと対応するオフセットテーブルをマッピング
+inline const std::array<std::array<sf::Vector2i, 5>, 4>&getWallKickTable(PieceType type){
+    switch (type) {
+    case PieceType::I:
+        return I_OFFSET_TABLE;
+    case PieceType::O:
+        return O_OFFSET_TABLE;
+    default: // T, J, L, S, Z 共通
+        return JLSTZ_OFFSET_TABLE;
+    }
 }
 
+// --- ピースの座標を回転させる関数（時計回りにrotation回数分） ---
+sf::Vector2i rotatedCell(int x, int y, int rotation) {
+    for (int i = 0; i < rotation; i++) {
+        int tmp = x;
+        x = y;
+        y = -tmp;
+    }
+    return sf::Vector2i(x, y);
+}
+
+// --- テトリミノの全ブロック座標を取得する関数 ---
+std::array<sf::Vector2i, 4> Piece::getRotatedCells(int rotationState) const {
+    std::array<sf::Vector2i, 4> cells;
+    const auto& shape = PIECE_SHAPES[static_cast<int>(type)];
+    for (int i = 0; i < 4; i++) {
+        cells[i] = rotatedCell(shape[i].x, shape[i].y, rotationState);
+    }
+    return cells;
+}
+
+// --- ピースが盤面または壁と衝突しているかチェック ---
+bool Piece::collides(Board& board, int xOffset, int yOffset, int rotationState) const {
+    auto cells = getRotatedCells(rotationState);
+    for (auto& c : cells) {
+        int px = x + c.x + xOffset;
+        int py = y + c.y + yOffset;
+        // 範囲外 or 他のブロックに衝突
+        if (px < 0 || px >= Board::WIDTH || py < 0 || py >= Board::HEIGHT)
+            return true;
+        if (board.isOccupied(px, py))
+            return true;
+    }
+    return false;
+}
+
+// --- 回転処理（JSのrotatedPieceに相当） ---
 void Piece::rotate(Board& board, bool clockwise) {
-    std::array<sf::Vector2i, 4> oldBlocks = blocks;
-    Rotation oldRotation = rotation;
+    int dir = clockwise ? 1 : -1;
+    int newRot = (static_cast<int>(rotation) + dir + 4) % 4;
 
-    // 回転前の絶対座標を出力
-    std::cout << "Before rotation: ";
-    for (auto& p : getAbsolutePositions()) {
-        std::cout << "(" << p.x << "," << p.y << ") ";
-    }
-    std::cout << std::endl;
+    // 回転前と後のオフセット表を取得
+    const auto& offsetTable = getWallKickTable(type);
+    const auto& fromTable = offsetTable[static_cast<int>(rotation)];
+    const auto& toTable = offsetTable[newRot];
 
-    // 回転
-    for (auto& b : blocks) {
-        int tmp = b.x;
-        if (clockwise) {
-            b.x = -b.y;
-            b.y = tmp;
-        }
-        else {
-            b.x = b.y;
-            b.y = -tmp;
-        }
-    }
+    // 各候補のオフセットを順に試す
+    bool rotated = false;
+    for (int i = 0; i < 5; i++) {
+        sf::Vector2i from = fromTable[i];
+        sf::Vector2i to = toTable[i];
 
-    // 次の回転状態を計算
-    Rotation newRotation = static_cast<Rotation>((static_cast<int>(rotation) + (clockwise ? 1 : 3)) % 4);
+        int dx = from.x - to.x;
+        int dy = from.y - to.y;
 
-    // --- ウォールキック処理 ---
-    int kickIndex = getKickIndex(oldRotation, newRotation);
-    const auto& kicks = (type == PieceType::I) ? WALL_KICKS_I : WALL_KICKS;
+        // 衝突判定
+        if (!collides(board, dx, dy, newRot)) {
+            // 回転確定
+            rotation = static_cast<Rotation>(newRot);
+            x += dx;
+            y += dy;
 
-    bool moved = false;
-    for (const auto& offset : kicks[kickIndex]) {
-        if (canMove(board, offset.x, offset.y)) {
-            x += offset.x;
-            y += offset.y;
-            moved = true;
+            // blocksを回転形状に更新
+            blocks = getRotatedCells(static_cast<int>(rotation));
+
+            rotated = true;
             break;
         }
     }
 
-    if (!moved) {
-        // 全て失敗したら元に戻す
-        blocks = oldBlocks;
-        newRotation = oldRotation;
+    if (!rotated) {
+        // 回転できない場合、何もしない
+        std::cout << "Rotation blocked.\n";
     }
-
-    // 回転後の絶対座標を出力
-    std::cout << "After rotation: ";
-    for (auto& p : getAbsolutePositions()) {
-        std::cout << "(" << p.x << "," << p.y << ") ";
+    else {
+        std::cout << "Rotation succeeded.\n";
     }
-    std::cout << std::endl;
 }
 
-// ピースを盤面に固定
 void Piece::place(Board& board) {
     for (auto& b : blocks)
         board.placeBlock(x + b.x, y + b.y, color);
