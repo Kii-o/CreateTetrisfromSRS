@@ -34,13 +34,18 @@
 enum class PieceType { T, S, Z, I, O, L, J };
 // 回転状態
 enum class Rotation { Spawn = 0, Right = 1, Reverse = 2, Left = 3 };
-int getKickIndex(Rotation oldRot, Rotation newRot); //ウォールキックテーブルを適応するための関数
 
 // ==== ピース形状と色の定義（実体は .cpp 側で定義） ====
 // それぞれのミノの4マス分の相対座標
 extern const std::array<std::array<sf::Vector2i, 4>, 7> PIECE_SHAPES;
 // それぞれのミノの色
 extern const std::array<sf::Color, 7> PIECE_COLORS;
+
+// --- ウォールキックテーブル宣言 ---
+extern const std::array<std::array<sf::Vector2i, 5>, 4> JLSTZ_OFFSET_TABLE;
+extern const std::array<std::array<sf::Vector2i, 5>, 4> I_OFFSET_TABLE;
+extern const std::array<std::array<sf::Vector2i, 5>, 4> O_OFFSET_TABLE;
+
 
 // ==== ピースを表すクラス ====
 class Piece {
@@ -49,7 +54,7 @@ public:
     Rotation rotation = Rotation::Spawn;
     sf::Color color;                         // このピースの色
     std::array<sf::Vector2i, 4> blocks;      // 4つのブロックの相対座標
-    int x = 3, y = 0;                        // フィールド上での位置（左上が基準）
+    int x = 3, y = 0;                        // フィールド上での位置（左下が基準）
 
     Piece(PieceType type);                   // コンストラクタ（種類を指定して生成）
     void draw(sf::RenderWindow& window);     // フィールド上に描画
@@ -59,9 +64,11 @@ public:
     // 任意のブロック配列で判定する canMove としてオーバーロード
     //bool canMove(Board& board, const std::array<sf::Vector2i, 4>& testBlocks, int dx, int dy);
     void move(int dx, int dy);               // 実際に移動する
+    std::array<sf::Vector2i, 4> getRotatedCells(int rotationState) const;
+    bool collides(Board& board, int xOffset, int yOffset, int rotationState) const;
     // 右回転なら clockwise = true、左回転なら false
     void rotate(Board& board, bool clockwise);
-    void place(Board& board);                // ボードに固定する
+    void place(Board& board);
 };
 
 // ==== 7種1巡の「bag方式」を管理するクラス ====
@@ -103,3 +110,6 @@ private:
     void handleFall();                       // 自動落下の処理
     void render();                           // 描画処理（盤面・ピース・UI表示）
 };
+
+// ==== ウォールキックテーブル取得関数（宣言） ====
+inline const std::array<std::array<sf::Vector2i, 5>, 4>& getWallKickTable(PieceType type);
