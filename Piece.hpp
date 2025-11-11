@@ -45,7 +45,13 @@ extern const std::array<sf::Color, 7> PIECE_COLORS;
 extern const std::array<std::array<sf::Vector2i, 5>, 4> JLSTZ_OFFSET_TABLE;
 extern const std::array<std::array<sf::Vector2i, 5>, 4> I_OFFSET_TABLE;
 extern const std::array<std::array<sf::Vector2i, 5>, 4> O_OFFSET_TABLE;
-
+// ==== ゲームの状態を表す構造体 ====
+struct GameState {
+    PieceType currentPiece;                 // 現在操作中のミノ
+    std::array<PieceType, 5> nextPieces;    // Nextに表示されている5つのミノ
+    bool holdExists;                        // Holdにミノがあるか
+    bool holdUsed;                          // このターンでHoldを使ったか
+};
 
 // ==== ピースを表すクラス ====
 class Piece {
@@ -104,6 +110,7 @@ private:
 public:
     Game();                                  // コンストラクタ（初期化）
     void run();                              // メインループ（イベント・更新・描画を回す）
+    GameState getGameState() const;          // 状態を取得する関数
 private:
     void handleEvents();                     // イベント処理（閉じるボタンなど）
     void handleInput();                      // 入力処理（移動・回転・Holdなど）
@@ -113,3 +120,16 @@ private:
 
 // ==== ウォールキックテーブル取得関数（宣言） ====
 inline const std::array<std::array<sf::Vector2i, 5>, 4>& getWallKickTable(PieceType type);
+
+inline std::string pieceTypeToString(PieceType type) {
+    switch (type) {
+    case PieceType::T: return "T";
+    case PieceType::S: return "S";
+    case PieceType::Z: return "Z";
+    case PieceType::I: return "I";
+    case PieceType::O: return "O";
+    case PieceType::L: return "L";
+    case PieceType::J: return "J";
+    }
+    return "?";
+}
