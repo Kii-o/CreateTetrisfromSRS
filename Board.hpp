@@ -1,4 +1,6 @@
 #pragma once 
+#include<iostream>
+#include <cstdlib> // for system()
 #include <vector> 
 #include <SFML/Graphics.hpp> 
 
@@ -23,6 +25,7 @@ public:
 
     // 盤面データ（高さ×幅の2次元配列）
     std::vector<std::vector<Block>> grid;
+    std::string toString() const; //盤面返却用
 
     // コンストラクタ（空の盤面を作成）
     Board();
@@ -38,4 +41,7 @@ public:
 
     // そろったラインを消去し、消した行数を返す
     int clearLines();
+
+    //盤面の出力
+    void print();
 };
