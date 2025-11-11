@@ -81,12 +81,12 @@ void Piece::drawPreview(sf::RenderWindow& window, int px, int py, int size) {
 }
 
 // 指定した移動量 (dx,dy) で動けるかどうか判定
-bool Piece::canMove(Board& board, int dx, int dy) { 
-    for (auto& b : blocks) { 
-        int nx = x + b.x + dx, ny = y + b.y + dy; 
+bool Piece::canMove(Board& board, int dx, int dy) {
+    for (auto& b : blocks) {
+        int nx = x + b.x + dx, ny = y + b.y + dy;
         if (board.isOccupied(nx, ny)) return false; // 盤面外またはブロック衝突 
-    } 
-        return true; 
+    }
+    return true;
 }
 
 // 実際にピースを移動する
@@ -100,7 +100,7 @@ void Piece::move(int dx, int dy) {
 // T, J, L, S, Z 用
 const std::array<std::array<sf::Vector2i, 5>, 4> JLSTZ_OFFSET_TABLE = { {
     {{ {0,0}, {0,0}, {0,0}, {0,0}, {0,0} }},
-    {{ {0,0}, {1,0}, {1,-1}, {0,2}, {1,2} }}, 
+    {{ {0,0}, {1,0}, {1,-1}, {0,2}, {1,2} }},
     {{ {0,0}, {0,0}, {0,0}, {0,0}, {0,0} }},
     {{ {0,0}, {-1,0}, {-1,-1}, {0,2}, {-1,2} }}
 } };
@@ -146,7 +146,7 @@ const std::array<std::array<sf::Vector2i, 5>, 4> O_OFFSET_TABLE = { {
 } };
 
 // 各テトリミノと対応するオフセットテーブルをマッピング
-inline const std::array<std::array<sf::Vector2i, 5>, 4>&getWallKickTable(PieceType type){
+inline const std::array<std::array<sf::Vector2i, 5>, 4>& getWallKickTable(PieceType type) {
     switch (type) {
     case PieceType::I:
         return I_OFFSET_TABLE;
@@ -318,10 +318,11 @@ void Game::handleInput() {
         if (currentPiece.canMove(board, 0, 1)) currentPiece.move(0, 1);
 
     // --- 回転 ---
+    //SFMLの関係上逆にする必要がある
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
-        currentPiece.rotate(board, false); // 左回転
+        currentPiece.rotate(board, true); // 左回転
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
-        currentPiece.rotate(board, true);  // 右回転
+        currentPiece.rotate(board, false);  // 右回転
 
     // --- 上移動（↑キーで1段上げる） ---
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
@@ -431,4 +432,21 @@ void Game::render() {
     }
 
     window.display();
+}
+
+//main関数に現在のミノ、ネクスト、Bag数を返却する
+GameState Game::getGameState() const {
+    GameState state;
+    state.currentPiece = currentPiece.type;
+    state.holdExists = holdExists;
+    state.holdUsed = holdUsed;
+
+    // Nextキューの先頭から最大5個をコピー
+    int i = 0;
+    for (auto& p : nextQueue) {
+        if (i >= 5) break;
+        state.nextPieces[i++] = p;
+    }
+
+    return state;
 }
