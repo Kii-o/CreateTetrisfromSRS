@@ -23,7 +23,7 @@ void Board::draw(sf::RenderWindow& window) {
     for (int y = 0; y < HEIGHT; ++y) {
         for (int x = 0; x < WIDTH; ++x) {
             int drawY = (HEIGHT - 1 - y);
-            grid[y][x].draw(window, x * 40, drawY*40);
+            grid[y][x].draw(window, x * 40, drawY * 40);
         }
     }
 }
@@ -47,6 +47,8 @@ void Board::placeBlock(int x, int y, sf::Color color) {
         grid[gridY][x].filled = true;
         grid[gridY][x].color = color;
     }
+
+    print();
 }
 
 // 揃ったラインを削除し、削除した行数を返す
@@ -82,3 +84,61 @@ int Board::clearLines() {
     return linesCleared;
 }
 
+// ターミナルに盤面を出力する
+void Board::print() {
+#ifdef _WIN32
+    system("cls");   // Windows
+#else
+    system("clear"); // macOS / Linux
+#endif
+
+    //std::cout << "===== BOARD =====" << std::endl;
+
+    for (int y = HEIGHT - 1; y >= 0; --y) {
+        bool fullLine = true;
+        for (int x = 0; x < WIDTH; ++x) {
+            if (!grid[y][x].filled) {
+                fullLine = false;
+                break;
+            }
+        }
+
+        // すべて埋まっている行はスキップ
+        if (fullLine) continue;
+
+        // 通常表示
+        std::cout << "|";
+        for (int x = 0; x < WIDTH; ++x) {
+            std::cout << (grid[y][x].filled ? "X" : "_");
+        }
+        std::cout << "|" << std::endl;
+    }
+
+    //std::cout << "+" << std::string(WIDTH, '-') << "+" << std::endl;
+}
+
+// 盤面を文字列として返す
+std::string Board::toString() const {
+    std::string result;
+
+    for (int y = HEIGHT - 1; y >= 0; --y) {
+        bool fullLine = true;
+        for (int x = 0; x < WIDTH; ++x) {
+            if (!grid[y][x].filled) {
+                fullLine = false;
+                break;
+            }
+        }
+
+        // すべて埋まっている行はスキップ
+        if (fullLine) continue;
+
+        result += "|";
+        for (int x = 0; x < WIDTH; ++x) {
+            result += (grid[y][x].filled ? "X" : "_");
+        }
+        result += "|\n";
+    }
+
+    return result;
+}
